@@ -45,7 +45,8 @@ class LoginViewModel(
     }
 
     fun onPasswordChange(value: String) {
-        _uiState.value = _uiState.value.copy(password = value, errorMessage = null)
+        val sanitized = value.take(20)
+        _uiState.value = _uiState.value.copy(password = sanitized, errorMessage = null)
     }
 
     fun onRememberChange(value: Boolean) {

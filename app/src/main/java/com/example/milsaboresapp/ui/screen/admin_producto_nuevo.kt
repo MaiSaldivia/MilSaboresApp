@@ -83,9 +83,10 @@ fun AdminProductoNuevoScreen(
 
             OutlinedTextField(
                 value = state.code,
-                onValueChange = onCodeChange,
+                onValueChange = { if (!state.isEditing) onCodeChange(it) },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Código") },
+                enabled = !state.isEditing,
                 isError = state.errors.code != null,
                 supportingText = state.errors.code?.let {
                     { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -173,12 +174,13 @@ fun AdminProductoNuevoScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            val submitLabel = if (state.isEditing) "Guardar cambios" else "Registrar producto"
             Button(
                 onClick = onSubmit,
                 enabled = !state.isSubmitting,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Registrar producto")
+                Text(submitLabel)
             }
         }
 

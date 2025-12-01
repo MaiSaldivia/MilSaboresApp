@@ -61,15 +61,6 @@ fun MainTopAppBar(
                 }
             } else {
                 // Hay sesión -> saludo + ir a perfil + cerrar sesión
-                val firstName =
-                    currentUser?.name?.split(" ")?.firstOrNull().orEmpty()
-
-                Text(
-                    text = "Hola, $firstName",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
                 TextButton(
                     onClick = onLoginClick, // navega a Perfil desde MainActivity
                     colors = ButtonDefaults.textButtonColors(

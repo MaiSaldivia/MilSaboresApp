@@ -17,5 +17,9 @@ data class UserEntity(
     val address: String = "",
     val promoCode: String? = null,        // 👈 NUEVO
     val acceptsPromotions: Boolean = true,// 👈 NUEVO
-    val password: String
+    val password: String,
+    // Rol del usuario: 'ADMIN' o 'CLIENTE'
+    val role: String = "CLIENTE",
+    // Uri (local) de la foto de perfil (nullable)
+    val photoUri: String? = null
 )

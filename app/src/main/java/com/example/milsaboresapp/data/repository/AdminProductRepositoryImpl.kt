@@ -21,6 +21,12 @@ class AdminProductRepositoryImpl : AdminProductRepository {
         productsState.value = listOf(item) + productsState.value.filterNot { it.code.equals(item.code, ignoreCase = true) }
     }
 
+    override suspend fun updateProduct(item: AdminProductItem) {
+        productsState.value = productsState.value.map { current ->
+            if (current.code.equals(item.code, ignoreCase = true)) item else current
+        }
+    }
+
     override suspend fun deleteProduct(code: String) {
         productsState.value = productsState.value.filterNot { it.code.equals(code, ignoreCase = true) }
     }

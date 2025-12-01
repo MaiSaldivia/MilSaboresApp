@@ -3,17 +3,20 @@ package com.example.milsaboresapp.ui.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,12 +29,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.milsaboresapp.presentation.productdetail.ProductDetailViewModel.UiState
 import com.example.milsaboresapp.ui.common.MainFooter
 import com.example.milsaboresapp.ui.common.MainNavigationBar
@@ -49,7 +53,6 @@ fun ProductDetailScreen(
     onTabClick: (String) -> Unit,
     onLoginClick: () -> Unit,
     onCartClick: () -> Unit,
-    onNavigateHome: () -> Unit,
     onNavigateToProducts: () -> Unit,
     onNavigateToCategory: (String) -> Unit,
     onQuantityChange: (Int) -> Unit,
@@ -89,16 +92,6 @@ fun ProductDetailScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                item {
-                    Breadcrumb(
-                        productName = state.product?.nombre ?: "Producto",
-                        category = state.product?.categoria,
-                        onHomeClick = onNavigateHome,
-                        onProductsClick = onNavigateToProducts,
-                        onCategoryClick = { cat -> onNavigateToCategory(cat) }
-                    )
-                }
-
                 state.product?.let { producto ->
                     item {
                         ProductDetailContent(
@@ -111,6 +104,7 @@ fun ProductDetailScreen(
                             quantity = state.quantity,
                             customMessage = state.customMessage,
                             showCustomMessage = state.showCustomMessageField,
+                            onBackClick = onNavigateToProducts,
                             onCategoryClick = { onNavigateToCategory(producto.categoria) },
                             onQuantityChange = onQuantityChange,
                             onMessageChange = onMessageChange,
@@ -127,19 +121,18 @@ fun ProductDetailScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                content = {
-                                    items(state.related) { related ->
-                                        ProductCard(
-                                            imageResId = DrawableCatalog.resolve(related.img),
-                                            title = related.nombre,
-                                            price = CurrencyFormatter.format(related.precio)
-                                        ) {
-                                            onRelatedClick(related.id)
-                                        }
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                items(state.related) { related ->
+                                    ProductCard(
+                                        imageResId = DrawableCatalog.resolve(related.img),
+                                        title = related.nombre,
+                                        price = CurrencyFormatter.format(related.precio)
+                                    ) {
+                                        onRelatedClick(related.id)
                                     }
                                 }
-                            )
+                            }
                         }
                     }
                 } ?: item {
@@ -158,37 +151,7 @@ fun ProductDetailScreen(
     }
 }
 
-@Composable
-private fun Breadcrumb(
-    productName: String,
-    category: String?,
-    onHomeClick: () -> Unit,
-    onProductsClick: () -> Unit,
-    onCategoryClick: (String) -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        TextButton(onClick = onHomeClick) {
-            Text("Inicio")
-        }
-        Text("›")
-        TextButton(onClick = onProductsClick) {
-            Text("Productos")
-        }
-        if (!category.isNullOrBlank()) {
-            Text("›")
-            TextButton(onClick = { onCategoryClick(category) }) {
-                Text(category)
-            }
-        }
-        Text("›")
-        Text(productName, fontWeight = FontWeight.SemiBold)
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ProductDetailContent(
     title: String,
@@ -200,12 +163,34 @@ private fun ProductDetailContent(
     quantity: Int,
     customMessage: String,
     showCustomMessage: Boolean,
+    onBackClick: () -> Unit,
     onCategoryClick: () -> Unit,
     onQuantityChange: (Int) -> Unit,
     onMessageChange: (String) -> Unit,
     onAddToCart: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Button(
+            onClick = onBackClick,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White,
+                contentColor = MaterialTheme.colorScheme.primary
+            ),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+        ) {
+            Text("Volver")
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Start
+        )
+
         Image(
             painter = painterResource(id = imageResId),
             contentDescription = title,
@@ -215,15 +200,13 @@ private fun ProductDetailContent(
             contentScale = ContentScale.Crop
         )
 
-        Text(
-            text = title,
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.Bold
-        )
-
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             TextButton(onClick = onCategoryClick) {
-                Text(category)
+                Text(category, maxLines = 1)
             }
             if (attribute.isNotBlank()) {
                 Text(
@@ -262,15 +245,16 @@ private fun ProductDetailContent(
             }
         }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedTextField(
                 value = quantity.toString(),
                 onValueChange = { text -> text.toIntOrNull()?.let(onQuantityChange) },
                 modifier = Modifier
-                    .width(96.dp),
+                    .widthIn(min = 96.dp, max = 140.dp),
                 label = { Text("Cantidad") },
                 singleLine = true,
                 maxLines = 1
@@ -279,7 +263,11 @@ private fun ProductDetailContent(
                 onClick = onAddToCart,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Añadir al carrito", color = MaterialTheme.colorScheme.onPrimary)
+                Text(
+                    text = "Añadir al carrito",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    maxLines = 1
+                )
             }
         }
 
@@ -288,6 +276,7 @@ private fun ProductDetailContent(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun ShareRow() {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -295,13 +284,17 @@ private fun ShareRow() {
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             listOf("📲 Compartir", "📸 Instagram", "📋 Copiar enlace").forEach { label ->
                 Button(
                     onClick = {},
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Text(label)
+                    Text(label, maxLines = 1)
                 }
             }
         }
@@ -335,7 +328,6 @@ private fun PreviewProductDetailScreen() {
             onTabClick = {},
             onLoginClick = {},
             onCartClick = {},
-            onNavigateHome = {},
             onNavigateToProducts = {},
             onNavigateToCategory = {},
             onQuantityChange = {},

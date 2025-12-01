@@ -53,6 +53,7 @@ fun AdminProductosScreen(
     onQueryChange: (String) -> Unit,
     onCategoryChange: (String?) -> Unit,
     onAddProductClick: () -> Unit,
+    onEditProduct: (AdminProductItem) -> Unit,
     onDeleteProduct: (String) -> Unit,
     onDismissDeleteSuccess: () -> Unit,
     onBack: () -> Unit
@@ -158,7 +159,11 @@ fun AdminProductosScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(state.products, key = { it.code }) { item ->
-                        AdminProductRow(item = item, onDelete = onDeleteProduct)
+                        AdminProductRow(
+                            item = item,
+                            onEdit = onEditProduct,
+                            onDelete = onDeleteProduct
+                        )
                     }
                 }
             }
@@ -182,6 +187,7 @@ fun AdminProductosScreen(
 @Composable
 private fun AdminProductRow(
     item: AdminProductItem,
+    onEdit: (AdminProductItem) -> Unit,
     onDelete: (String) -> Unit
 ) {
     Card(
@@ -204,8 +210,13 @@ private fun AdminProductRow(
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = "Precio: ${CurrencyFormatter.format(item.price)}")
             Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = { onDelete(item.code) }) {
-                Text("Eliminar")
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = { onEdit(item) }) {
+                    Text("Editar")
+                }
+                Button(onClick = { onDelete(item.code) }) {
+                    Text("Eliminar")
+                }
             }
         }
     }

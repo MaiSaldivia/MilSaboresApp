@@ -61,15 +61,18 @@ class RegisterViewModel(
     // ----------- Handlers de cambios de campos ------------
 
     fun onRunChange(value: String) {
-        _uiState.value = _uiState.value.copy(run = value, errorMessage = null)
+        val sanitized = sanitizeRunInput(value)
+        _uiState.value = _uiState.value.copy(run = sanitized, errorMessage = null)
     }
 
     fun onFirstNameChange(value: String) {
-        _uiState.value = _uiState.value.copy(firstName = value, errorMessage = null)
+        val sanitized = value.filter { it.isLetter() || it.isWhitespace() }
+        _uiState.value = _uiState.value.copy(firstName = sanitized, errorMessage = null)
     }
 
     fun onLastNameChange(value: String) {
-        _uiState.value = _uiState.value.copy(lastName = value, errorMessage = null)
+        val sanitized = value.filter { it.isLetter() || it.isWhitespace() }
+        _uiState.value = _uiState.value.copy(lastName = sanitized, errorMessage = null)
     }
 
     fun onEmailChange(value: String) {
@@ -101,11 +104,13 @@ class RegisterViewModel(
     }
 
     fun onPasswordChange(value: String) {
-        _uiState.value = _uiState.value.copy(password = value, errorMessage = null)
+        val sanitized = value.take(20)
+        _uiState.value = _uiState.value.copy(password = sanitized, errorMessage = null)
     }
 
     fun onConfirmPasswordChange(value: String) {
-        _uiState.value = _uiState.value.copy(confirmPassword = value, errorMessage = null)
+        val sanitized = value.take(20)
+        _uiState.value = _uiState.value.copy(confirmPassword = sanitized, errorMessage = null)
     }
 
     fun onAcceptsPromotionsChange(value: Boolean) {
@@ -321,5 +326,19 @@ class RegisterViewModel(
                 RegisterViewModel(authRepository)
             }
         }
+    }
+
+    private fun sanitizeRunInput(raw: String): String {
+        val upper = raw.uppercase()
+        val digits = buildString {
+            for (char in upper) {
+                if (char.isDigit()) {
+                    if (length < 9) append(char)
+                }
+            }
+        }
+
+        val appendDigitVerifier = upper.endsWith("K") && digits.length < 9
+        return if (appendDigitVerifier) digits + "K" else digits
     }
 }

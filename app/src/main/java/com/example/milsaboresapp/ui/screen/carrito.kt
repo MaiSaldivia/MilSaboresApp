@@ -64,15 +64,27 @@ fun CarritoScreen(
     currentTab: String,
     onTabClick: (String) -> Unit,
     onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit,
     onCartClick: () -> Unit,
     onIncreaseQuantity: (String) -> Unit,
     onDecreaseQuantity: (String) -> Unit,
     onRemoveItem: (String) -> Unit,
     onCheckout: () -> Unit,
+    isUserLoggedIn: Boolean,
     onShippingOptionSelected: (ShippingOption) -> Unit,
     onContinueShopping: () -> Unit,
     onDismissSuccess: () -> Unit
 ) {
+    var showAuthDialog by remember { mutableStateOf(false) }
+
+    val handleCheckout = {
+        if (isUserLoggedIn) {
+            onCheckout()
+        } else {
+            showAuthDialog = true
+        }
+    }
+
     Scaffold(
         topBar = {
             Column {
@@ -115,7 +127,7 @@ fun CarritoScreen(
                     onIncreaseQuantity = onIncreaseQuantity,
                     onDecreaseQuantity = onDecreaseQuantity,
                     onRemoveItem = onRemoveItem,
-                    onCheckout = onCheckout,
+                    onCheckout = handleCheckout,
                     onShippingOptionSelected = onShippingOptionSelected,
                     onContinueShopping = onContinueShopping
                 )
@@ -124,6 +136,20 @@ fun CarritoScreen(
 
         if (state.checkoutSuccess) {
             CheckoutSuccessDialog(onDismiss = onDismissSuccess)
+        }
+
+        if (showAuthDialog) {
+            AuthRequiredDialog(
+                onDismiss = { showAuthDialog = false },
+                onLogin = {
+                    showAuthDialog = false
+                    onLoginClick()
+                },
+                onRegister = {
+                    showAuthDialog = false
+                    onRegisterClick()
+                }
+            )
         }
     }
 }
@@ -683,6 +709,29 @@ private fun CheckoutSuccessDialog(onDismiss: () -> Unit) {
     )
 }
 
+@Composable
+private fun AuthRequiredDialog(
+    onDismiss: () -> Unit,
+    onLogin: () -> Unit,
+    onRegister: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onLogin) {
+                Text("Iniciar sesión")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onRegister) {
+                Text("Registrarme")
+            }
+        },
+    title = { Text("Registrate para continuar") },
+        text = { Text("Debes registrarte o iniciar sesión para completar tu compra.") }
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun PreviewCarritoScreen() {
@@ -740,11 +789,13 @@ private fun PreviewCarritoScreen() {
             currentTab = "Inicio",
             onTabClick = {},
             onLoginClick = {},
+            onRegisterClick = {},
             onCartClick = {},
             onIncreaseQuantity = {},
             onDecreaseQuantity = {},
             onRemoveItem = {},
             onCheckout = {},
+            isUserLoggedIn = true,
             onShippingOptionSelected = {},
             onContinueShopping = {},
             onDismissSuccess = {}

@@ -40,8 +40,8 @@ fun validatePasswordForAuth(password: String): String? {
     if (password.isEmpty()) {
         return "La contraseña es obligatoria."
     }
-    if (password.length !in 4..10) {
-        return "La contraseña debe tener entre 4 y 10 caracteres."
+    if (password.length !in 4..20) {
+        return "La contraseña debe tener entre 4 y 20 caracteres."
     }
     return null
 }

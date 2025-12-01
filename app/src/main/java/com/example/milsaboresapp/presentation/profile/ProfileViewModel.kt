@@ -426,6 +426,17 @@ class ProfileViewModel(
         }
     }
 
+    /** Guarda la foto de perfil (uri local) en la última cuenta de Room */
+    fun saveProfilePhoto(photoUri: String) {
+        viewModelScope.launch {
+            val last = userDao.getLastUser() ?: return@launch
+            val updated = last.copy(photoUri = photoUri)
+            userDao.update(updated)
+            // recarga datos
+            refreshFromDatabase()
+        }
+    }
+
     private fun findCommunes(region: String, content: ProfileContent?): List<String> {
         if (region.isBlank() || content == null) return emptyList()
         return content.regions.firstOrNull {

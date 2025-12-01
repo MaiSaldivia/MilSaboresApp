@@ -36,10 +36,29 @@ import com.example.milsaboresapp.ui.screen.IndexScreen
 import com.example.milsaboresapp.ui.screen.LoginScreen
 import com.example.milsaboresapp.ui.screen.NosotrosScreen
 import com.example.milsaboresapp.ui.screen.PerfilScreen
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.ui.platform.LocalContext
+import java.io.File
+import java.io.FileOutputStream
 import com.example.milsaboresapp.ui.screen.ProductDetailScreen
 import com.example.milsaboresapp.ui.screen.ProductsScreen
 import com.example.milsaboresapp.ui.screen.RegistroScreen
 import com.example.milsaboresapp.ui.theme.MilSaboresAppTheme
+import com.example.milsaboresapp.navigation.AppDestination
+import com.example.milsaboresapp.domain.model.admin.AdminDestination
+import com.example.milsaboresapp.presentation.admin.AdminDashboardViewModel
+import com.example.milsaboresapp.presentation.admin.AdminProductFormViewModel
+import com.example.milsaboresapp.presentation.admin.AdminProductsViewModel
+import com.example.milsaboresapp.presentation.admin.AdminUserFormViewModel
+import com.example.milsaboresapp.presentation.admin.AdminUsersViewModel
+import com.example.milsaboresapp.ui.screen.AdminHomeScreen
+import com.example.milsaboresapp.ui.screen.AdminProductoNuevoScreen
+import com.example.milsaboresapp.ui.screen.AdminProductosScreen
+import com.example.milsaboresapp.ui.screen.AdminUsuarioNuevoScreen
+import com.example.milsaboresapp.ui.screen.AdminUsuarioScreen
 
 class MainActivity : ComponentActivity() {
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -205,7 +224,163 @@ private fun MainApp() {
 					}
 				)
 			}
+			AppDestination.Admin -> {
+				val adminDashboardViewModel: AdminDashboardViewModel = viewModel(
+					factory = AdminDashboardViewModel.provideFactory(AppGraph.adminDashboardRepository)
+				)
+				val adminDashboardState by adminDashboardViewModel.uiState.collectAsState()
 
+				val adminProductsViewModel: AdminProductsViewModel = viewModel(
+					factory = AdminProductsViewModel.provideFactory(AppGraph.adminProductRepository)
+				)
+				val adminProductsState by adminProductsViewModel.uiState.collectAsState()
+
+				val adminProductFormViewModel: AdminProductFormViewModel = viewModel(
+					factory = AdminProductFormViewModel.provideFactory(AppGraph.adminProductRepository)
+				)
+				val adminProductFormState by adminProductFormViewModel.uiState.collectAsState()
+
+				val adminUsersViewModel: AdminUsersViewModel = viewModel(
+					factory = AdminUsersViewModel.provideFactory(AppGraph.adminUserRepository)
+				)
+				val adminUsersState by adminUsersViewModel.uiState.collectAsState()
+
+				val adminUserFormViewModel: AdminUserFormViewModel = viewModel(
+					factory = AdminUserFormViewModel.provideFactory(AppGraph.adminUserRepository)
+				)
+				val adminUserFormState by adminUserFormViewModel.uiState.collectAsState()
+
+				var adminSection by remember { mutableStateOf(AdminDestination.Home) }
+				var showProductForm by remember { mutableStateOf(false) }
+				var showUserForm by remember { mutableStateOf(false) }
+
+				LaunchedEffect(currentUser?.id) {
+					adminSection = AdminDestination.Home
+					showProductForm = false
+					showUserForm = false
+				}
+
+				when {
+					showProductForm -> {
+						AdminProductoNuevoScreen(
+							state = adminProductFormState,
+							onCodeChange = adminProductFormViewModel::onCodeChange,
+							onNameChange = adminProductFormViewModel::onNameChange,
+							onPriceChange = adminProductFormViewModel::onPriceChange,
+							onStockChange = adminProductFormViewModel::onStockChange,
+							onCategoryChange = adminProductFormViewModel::onCategoryChange,
+							onSubmit = adminProductFormViewModel::submit,
+							onSuccessDismiss = {
+								adminProductFormViewModel.resetSuccess()
+								adminProductFormViewModel.resetForm()
+								showProductForm = false
+							},
+							onBack = {
+								adminProductFormViewModel.resetSuccess()
+								adminProductFormViewModel.resetForm()
+								showProductForm = false
+							}
+						)
+					}
+
+					showUserForm -> {
+						AdminUsuarioNuevoScreen(
+							state = adminUserFormState,
+							onRunChange = adminUserFormViewModel::onRunChange,
+							onFirstNameChange = adminUserFormViewModel::onFirstNameChange,
+							onLastNameChange = adminUserFormViewModel::onLastNameChange,
+							onEmailChange = adminUserFormViewModel::onEmailChange,
+							onRoleChange = adminUserFormViewModel::onRoleChange,
+							onRegionChange = adminUserFormViewModel::onRegionChange,
+							onCommuneChange = adminUserFormViewModel::onCommuneChange,
+							onSubmit = adminUserFormViewModel::submit,
+							onSuccessDismiss = {
+								adminUserFormViewModel.resetSuccess()
+								showUserForm = false
+							},
+							onBack = {
+								adminUserFormViewModel.resetSuccess()
+								showUserForm = false
+							}
+						)
+					}
+
+					else -> {
+						when (adminSection) {
+							AdminDestination.Home -> {
+								AdminHomeScreen(
+									state = adminDashboardState,
+									onWidgetClick = { dest ->
+										adminSection = when (dest) {
+											AdminDestination.Productos -> AdminDestination.Productos
+											AdminDestination.Usuarios -> AdminDestination.Usuarios
+											AdminDestination.Login -> {
+												AppGraph.sessionManager.logout()
+												loginViewModel.resetSuccess()
+												destination = AppDestination.Login
+												AdminDestination.Home
+											}
+											else -> AdminDestination.Home
+										}
+									},
+									onLogoutClick = {
+										AppGraph.sessionManager.logout()
+										loginViewModel.resetSuccess()
+										destination = AppDestination.Home
+									}
+								)
+							}
+
+							AdminDestination.Productos -> {
+								AdminProductosScreen(
+									state = adminProductsState,
+									onQueryChange = adminProductsViewModel::onQueryChange,
+									onCategoryChange = adminProductsViewModel::onCategoryChange,
+									onAddProductClick = {
+										adminProductFormViewModel.resetSuccess()
+										adminProductFormViewModel.startCreate()
+										showProductForm = true
+									},
+									onEditProduct = { item ->
+										adminProductFormViewModel.resetSuccess()
+										adminProductFormViewModel.startEditing(item)
+										showProductForm = true
+									},
+									onDeleteProduct = adminProductsViewModel::deleteProduct,
+									onDismissDeleteSuccess = adminProductsViewModel::resetDeleteSuccess,
+									onBack = {
+										adminSection = AdminDestination.Home
+									}
+								)
+							}
+
+							AdminDestination.Usuarios -> {
+								AdminUsuarioScreen(
+									state = adminUsersState,
+									onQueryChange = adminUsersViewModel::onQueryChange,
+									onRoleChange = adminUsersViewModel::onRoleChange,
+									onAddUserClick = {
+										adminUserFormViewModel.resetSuccess()
+										showUserForm = true
+									},
+									onDeleteUser = adminUsersViewModel::deleteUser,
+									onDismissDeleteSuccess = adminUsersViewModel::resetDeleteSuccess,
+									onBack = {
+										adminSection = AdminDestination.Home
+									}
+								)
+							}
+
+							AdminDestination.Login -> {
+								AppGraph.sessionManager.logout()
+								loginViewModel.resetSuccess()
+								destination = AppDestination.Login
+								adminSection = AdminDestination.Home
+							}
+						}
+					}
+				}
+			}
 			is AppDestination.ProductoDetalle -> {
 				val detailViewModel: ProductDetailViewModel = viewModel(
 					key = "product-${current.productId}",
@@ -222,7 +397,6 @@ private fun MainApp() {
 					onTabClick = onTabSelected,
 					onLoginClick = navigateAuth,
 					onCartClick = navigateToCart,
-					onNavigateHome = { destination = AppDestination.Home },
 					onNavigateToProducts = navigateToProducts,
 					onNavigateToCategory = { category ->
 						productsViewModel.onCategorySelected(category)
@@ -360,10 +534,15 @@ private fun MainApp() {
 					onRememberChange = loginViewModel::onRememberChange,
 					onSubmit = loginViewModel::submit,
 					onNavigateToRegister = navigateToRegister,
-					onDismissSuccess = {
-						loginViewModel.resetSuccess()
-						destination = AppDestination.Perfil
-					}
+	                    onDismissSuccess = {
+	                        loginViewModel.resetSuccess()
+	                        // si el usuario actual es ADMIN -> ir a Admin, sino Perfil
+	                        destination = if (AppGraph.sessionManager.currentUser.value?.role == "ADMIN") {
+	                            AppDestination.Admin
+	                        } else {
+	                            AppDestination.Perfil
+	                        }
+	                    }
 				)
 			}
 
@@ -404,11 +583,13 @@ private fun MainApp() {
 					currentTab = currentTab,
 					onTabClick = onTabSelected,
 					onLoginClick = navigateAuth,
+					onRegisterClick = navigateToRegister,
 					onCartClick = navigateToCart,
 					onIncreaseQuantity = cartViewModel::increment,
 					onDecreaseQuantity = cartViewModel::decrement,
 					onRemoveItem = cartViewModel::remove,
 					onCheckout = cartViewModel::checkout,
+					isUserLoggedIn = currentUser != null,
 					onShippingOptionSelected = cartViewModel::selectShippingOption,
 					onContinueShopping = navigateToProducts,
 					onDismissSuccess = cartViewModel::resetCheckoutSuccess
@@ -416,12 +597,28 @@ private fun MainApp() {
 			}
 
 			AppDestination.Perfil -> {
+				// launcher para tomar foto y guardar en cache
+				val context = LocalContext.current
+				val takePhotoLauncher = rememberLauncherForActivityResult(
+					contract = ActivityResultContracts.TakePicturePreview()
+				) { bitmap: Bitmap? ->
+					bitmap?.let {
+						// guarda en cache
+						val file = File(context.cacheDir, "profile_${System.currentTimeMillis()}.jpg")
+						FileOutputStream(file).use { out ->
+							it.compress(Bitmap.CompressFormat.JPEG, 85, out)
+						}
+						val uri = Uri.fromFile(file)
+						profileViewModel.saveProfilePhoto(uri.toString())
+					}
+				}
 				PerfilScreen(
 					state = profileUiState,
 					currentTab = currentTab,
 					onTabClick = onTabSelected,
 					onLoginClick = navigateAuth,
 					onCartClick = navigateToCart,
+					onPickPhoto = { takePhotoLauncher.launch(null) },
 					onFirstNameChange = profileViewModel::onFirstNameChange,
 					onLastNameChange = profileViewModel::onLastNameChange,
 					onPhoneChange = profileViewModel::onPhoneChange,
@@ -446,16 +643,4 @@ private fun MainApp() {
 	}
 }
 
-private sealed class AppDestination(val topTab: String) {
-	object Home : AppDestination("Inicio")
-	object Productos : AppDestination("Productos")
-	data class ProductoDetalle(val productId: String) : AppDestination("Productos")
-	object Nosotros : AppDestination("Nosotros")
-	object Blog : AppDestination("Blog")
-	data class BlogDetalle(val postId: String) : AppDestination("Blog")
-	object Contacto : AppDestination("Contacto")
-	object Login : AppDestination("Inicio")
-	object Registro : AppDestination("Inicio")
-	object Carrito : AppDestination("Inicio")
-	object Perfil : AppDestination("Inicio")
-}
+// AppDestination moved to `navigation/AppDestination.kt`

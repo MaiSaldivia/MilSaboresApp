@@ -63,6 +63,7 @@ fun PerfilScreen(
     onTabClick: (String) -> Unit,
     onLoginClick: () -> Unit,
     onCartClick: () -> Unit,
+    onPickPhoto: () -> Unit = {},
     onFirstNameChange: (String) -> Unit,
     onLastNameChange: (String) -> Unit,
     onPhoneChange: (String) -> Unit,
@@ -117,6 +118,7 @@ fun PerfilScreen(
                 PerfilContent(
                     content = state.content,
                     uiState = state,
+                    onPickPhoto = onPickPhoto,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
@@ -203,6 +205,7 @@ private fun PerfilContent(
     content: ProfileContent,
     uiState: ProfileViewModel.UiState,
     modifier: Modifier = Modifier,
+    onPickPhoto: () -> Unit = {},
     onFirstNameChange: (String) -> Unit,
     onLastNameChange: (String) -> Unit,
     onPhoneChange: (String) -> Unit,
@@ -228,7 +231,8 @@ private fun PerfilContent(
         item {
             ProfileHero(
                 headline = content.headline,
-                message = content.welcomeMessage
+                message = content.welcomeMessage,
+                onPickPhoto = onPickPhoto
             )
         }
 
@@ -279,7 +283,7 @@ private fun PerfilContent(
 }
 
 @Composable
-private fun ProfileHero(headline: String, message: String) {
+private fun ProfileHero(headline: String, message: String, onPickPhoto: () -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -290,6 +294,9 @@ private fun ProfileHero(headline: String, message: String) {
             contentDescription = "Logo Mil Sabores",
             modifier = Modifier.height(96.dp)
         )
+        Button(onClick = { onPickPhoto() }, modifier = Modifier.padding(top = 8.dp)) {
+            Text("Actualizar foto")
+        }
         Text(
             text = headline,
             style = MaterialTheme.typography.displayLarge,

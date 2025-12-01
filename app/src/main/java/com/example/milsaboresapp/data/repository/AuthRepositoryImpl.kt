@@ -63,7 +63,9 @@ class AuthRepositoryImpl(
             commune = commune.trim(),
             address = address.trim(),
             password = password,
-            promoCode = promoCode?.uppercase()   // asegúrate que UserEntity tenga este campo
+            promoCode = promoCode?.uppercase(),   // asegúrate que UserEntity tenga este campo
+            // por defecto el rol al registrarse es CLIENTE
+            role = "CLIENTE"
         )
 
         userDao.insert(entity)
@@ -74,7 +76,12 @@ class AuthRepositoryImpl(
             val user = User(
                 id = inserted.id,
                 name = "${inserted.firstName} ${inserted.lastName}".trim(),
-                email = inserted.email
+                email = inserted.email,
+                birthDate = inserted.birthDate,
+                promoCode = inserted.promoCode,
+                acceptsPromotions = inserted.acceptsPromotions,
+                role = inserted.role,
+                photoUri = inserted.photoUri
             )
             // Deja la sesión iniciada automáticamente
             sessionManager.setCurrentUser(user)
@@ -90,7 +97,12 @@ class AuthRepositoryImpl(
                 val user = User(
                     id = it.id,
                     name = "${it.firstName} ${it.lastName}".trim(),
-                    email = it.email
+                    email = it.email,
+                    birthDate = it.birthDate,
+                    promoCode = it.promoCode,
+                    acceptsPromotions = it.acceptsPromotions,
+                    role = it.role,
+                    photoUri = it.photoUri
                 )
                 // Guardamos usuario logueado en el SessionManager
                 sessionManager.setCurrentUser(user)

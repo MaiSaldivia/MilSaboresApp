@@ -3,7 +3,8 @@ package com.example.milsaboresapp.di
 import android.content.Context
 import com.example.milsaboresapp.data.local.dao.AppDatabase
 import com.example.milsaboresapp.data.local.dao.UserDao
-import com.example.milsaboresapp.data.local.datasource.InMemoryProductDataSource
+import com.example.milsaboresapp.data.local.dao.ProductDao
+import com.example.milsaboresapp.data.local.datasource.ProductLocalDataSource
 import com.example.milsaboresapp.data.repository.AboutRepositoryImpl
 import com.example.milsaboresapp.data.repository.AdminAuthRepositoryImpl
 import com.example.milsaboresapp.data.repository.AdminDashboardRepositoryImpl
@@ -59,6 +60,10 @@ object AppGraph {
         database.userDao()
     }
 
+    val productDao: ProductDao by lazy {
+        database.productDao()
+    }
+
     // ------------------------------------------------------------------------
     // SessionManager (usuario logueado en memoria)
     // ------------------------------------------------------------------------
@@ -71,8 +76,8 @@ object AppGraph {
     // Data sources en memoria (productos)
     // ------------------------------------------------------------------------
 
-    private val productDataSource: InMemoryProductDataSource by lazy {
-        InMemoryProductDataSource()
+    val productLocalDataSource: ProductLocalDataSource by lazy {
+        ProductLocalDataSource(productDao)
     }
 
     // ------------------------------------------------------------------------
@@ -80,7 +85,7 @@ object AppGraph {
     // ------------------------------------------------------------------------
 
     val productoRepository: ProductoRepository by lazy {
-        ProductoRepositoryImpl(productDataSource)
+        com.example.milsaboresapp.data.repository.RemoteProductoRepositoryImpl(productLocalDataSource)
     }
 
     val blogRepository: BlogRepository by lazy {
@@ -136,7 +141,7 @@ object AppGraph {
     }
 
     val adminProductRepository: AdminProductRepository by lazy {
-        AdminProductRepositoryImpl()
+        com.example.milsaboresapp.data.repository.AdminProductRepositoryRoomImpl(productLocalDataSource)
     }
 
     val adminUserRepository: AdminUserRepository by lazy {

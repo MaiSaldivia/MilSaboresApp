@@ -1,5 +1,6 @@
 package com.example.milsaboresapp.ui.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +14,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
@@ -26,7 +27,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -62,6 +66,10 @@ fun ProductsScreen(
     onProductClick: (String) -> Unit,
     onAddToCartClick: (String) -> Unit
 ) {
+    val categoryOptions: List<String> = remember(state.categories) {
+        deriveCategoryOptions(state.categories)
+    }
+
     Scaffold(
         topBar = {
             Column {
@@ -95,7 +103,7 @@ fun ProductsScreen(
                 ProductsSearchBar(
                     query = state.query,
                     onQueryChange = onQueryChange,
-                    categories = state.categories,
+                    categories = categoryOptions,
                     selectedCategory = state.selectedCategory,
                     onCategorySelected = onCategorySelected,
                     sort = state.sort,
@@ -103,10 +111,10 @@ fun ProductsScreen(
                 )
             }
 
-            if (state.categories.isNotEmpty()) {
+            if (categoryOptions.isNotEmpty()) {
                 item {
-                    CategoriesChips(
-                        categories = state.categories,
+                    CategorySuggestions(
+                        categories = categoryOptions,
                         selected = state.selectedCategory,
                         onChipClick = onCategorySelected
                     )
@@ -168,7 +176,13 @@ private fun ProductsSearchBar(
             onValueChange = onQueryChange,
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Buscar producto") },
-            singleLine = true
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            )
         )
 
         Row(
@@ -206,16 +220,23 @@ private fun CategoryDropdown(
             value = label,
             onValueChange = {},
             readOnly = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = true },
             label = { Text("Categoría") },
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Filled.ArrowDropDown,
                     contentDescription = "Ver categorías"
                 )
-            }
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp)
+                .clickable { expanded = true }
         )
 
         DropdownMenu(
@@ -251,10 +272,8 @@ private fun SortDropdown(
     var expanded by remember { mutableStateOf(false) }
 
     val label = when (current) {
-        SortOption.Relevance -> "Orden: Relevancia"
-        SortOption.PriceAsc -> "Precio: menor a mayor"
-        SortOption.PriceDesc -> "Precio: mayor a menor"
-        SortOption.NameAsc -> "Nombre: A → Z"
+        SortOption.NameAsc -> "Orden: A - Z"
+        SortOption.NameDesc -> "Orden: Z - A"
     }
 
     Box(modifier = modifier) {
@@ -262,16 +281,23 @@ private fun SortDropdown(
             value = label,
             onValueChange = {},
             readOnly = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = true },
             label = { Text("Ordenar") },
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Filled.ArrowDropDown,
                     contentDescription = "Ver opciones de orden"
                 )
-            }
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp)
+                .clickable { expanded = true }
         )
 
         DropdownMenu(
@@ -280,10 +306,8 @@ private fun SortDropdown(
         ) {
             SortOption.values().forEach { option ->
                 val optionLabel = when (option) {
-                    SortOption.Relevance -> "Relevancia"
-                    SortOption.PriceAsc -> "Precio: menor a mayor"
-                    SortOption.PriceDesc -> "Precio: mayor a menor"
-                    SortOption.NameAsc -> "Nombre: A → Z"
+                    SortOption.NameAsc -> "Orden A - Z"
+                    SortOption.NameDesc -> "Orden Z - A"
                 }
                 DropdownMenuItem(
                     text = { Text(optionLabel) },
@@ -297,9 +321,37 @@ private fun SortDropdown(
     }
 }
 
+private fun deriveCategoryOptions(rawCategories: List<String>): List<String> {
+    if (rawCategories.isEmpty()) return emptyList()
+
+    val ordered = listOf(
+        "Postres Individuales",
+        "Productos Sin Azúcar",
+        "Productos Sin Gluten",
+        "Productos Vegano",
+        "Pastelería Tradicional",
+        "Tortas"
+    )
+
+    val hasTortas = rawCategories.any { it.contains("Torta", ignoreCase = true) }
+    val normalizedSet = rawCategories.map { category ->
+        when {
+            category.equals("Productos Vegana", ignoreCase = true) -> "Productos Vegano"
+            category.contains("Torta", ignoreCase = true) -> "Tortas"
+            else -> category
+        }
+    }.toMutableSet()
+
+    if (!hasTortas) {
+        normalizedSet.remove("Tortas")
+    }
+
+    return ordered.filter { normalizedSet.contains(it) }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CategoriesChips(
+private fun CategorySuggestions(
     categories: List<String>,
     selected: String?,
     onChipClick: (String?) -> Unit
@@ -309,27 +361,40 @@ private fun CategoriesChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Button(
-            onClick = { onChipClick(null) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (selected == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                contentColor = if (selected == null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-            )
-        ) {
-            Text("Todas")
-        }
+        SuggestionChip(
+            text = "Todas",
+            selected = selected == null,
+            onClick = { onChipClick(null) }
+        )
 
         categories.forEach { category ->
-            Button(
-                onClick = { onChipClick(category) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selected == category) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                    contentColor = if (selected == category) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                )
-            ) {
-                Text(category)
-            }
+            SuggestionChip(
+                text = category,
+                selected = selected?.equals(category, ignoreCase = true) == true,
+                onClick = { onChipClick(category) }
+            )
         }
+    }
+}
+
+@Composable
+private fun SuggestionChip(text: String, selected: Boolean, onClick: () -> Unit) {
+    val background = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+
+    Surface(
+        color = background,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, borderColor),
+        onClick = onClick
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge
+        )
     }
 }
 
@@ -411,8 +476,17 @@ private fun PreviewProductsScreen() {
                 isLoading = false,
                 query = "",
                 selectedCategory = null,
-                sort = SortOption.Relevance,
-                categories = listOf("Tortas", "Veganas"),
+                sort = SortOption.NameAsc,
+                categories = listOf(
+                    "Tortas Cuadradas",
+                    "Tortas Circulares",
+                    "Postres Individuales",
+                    "Productos Sin Azúcar",
+                    "Pastelería Tradicional",
+                    "Productos Sin Gluten",
+                    "Productos Vegana",
+                    "Tortas Especiales"
+                ),
                 products = emptyList()
             ),
             currentTab = "Productos",

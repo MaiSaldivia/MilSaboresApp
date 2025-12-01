@@ -8,5 +8,6 @@ interface AdminProductRepository {
     fun observeProducts(): Flow<List<AdminProductItem>>
     fun observeProductForm(): Flow<AdminProductFormContent>
     suspend fun addProduct(item: AdminProductItem)
+    suspend fun updateProduct(item: AdminProductItem)
     suspend fun deleteProduct(code: String)
 }

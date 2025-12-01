@@ -16,13 +16,13 @@ class ProductsViewModel(
     private val productoRepository: ProductoRepository
 ) : ViewModel() {
 
-    enum class SortOption { Relevance, PriceAsc, PriceDesc, NameAsc }
+    enum class SortOption { NameAsc, NameDesc }
 
     data class UiState(
         val isLoading: Boolean = true,
         val query: String = "",
         val selectedCategory: String? = null,
-        val sort: SortOption = SortOption.Relevance,
+        val sort: SortOption = SortOption.NameAsc,
         val categories: List<String> = emptyList(),
         val products: List<Producto> = emptyList()
     ) {
@@ -31,7 +31,7 @@ class ProductsViewModel(
 
     private val query = MutableStateFlow("")
     private val selectedCategory = MutableStateFlow<String?>(null)
-    private val sortOption = MutableStateFlow(SortOption.Relevance)
+    private val sortOption = MutableStateFlow(SortOption.NameAsc)
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -46,15 +46,26 @@ class ProductsViewModel(
                 sortOption
             ) { productos, categorias, q, cat, sort ->
                 val filtered = productos.filter { producto ->
-                    val matchesQuery = if (q.isBlank()) true else producto.nombre.contains(q, ignoreCase = true) || producto.attr.contains(q, ignoreCase = true) || producto.categoria.contains(q, ignoreCase = true)
-                    val matchesCategory = cat.isNullOrBlank() || producto.categoria.equals(cat, ignoreCase = true)
+                    val matchesQuery = if (q.isBlank()) {
+                        true
+                    } else {
+                        producto.nombre.contains(q, ignoreCase = true) ||
+                            producto.attr.contains(q, ignoreCase = true) ||
+                            producto.categoria.contains(q, ignoreCase = true)
+                    }
+
+                    val matchesCategory = when {
+                        cat.isNullOrBlank() -> true
+                        cat.equals("Tortas", ignoreCase = true) -> producto.categoria.contains("Torta", ignoreCase = true)
+                        cat.equals("Productos Vegano", ignoreCase = true) -> producto.categoria.equals("Productos Vegana", ignoreCase = true)
+                        else -> producto.categoria.equals(cat, ignoreCase = true)
+                    }
+
                     matchesQuery && matchesCategory
                 }.let { list ->
                     when (sort) {
-                        SortOption.Relevance -> list
-                        SortOption.PriceAsc -> list.sortedBy { it.precio }
-                        SortOption.PriceDesc -> list.sortedByDescending { it.precio }
                         SortOption.NameAsc -> list.sortedBy { it.nombre }
+                        SortOption.NameDesc -> list.sortedByDescending { it.nombre }
                     }
                 }
 
@@ -87,7 +98,7 @@ class ProductsViewModel(
     fun clearFilters() {
         query.value = ""
         selectedCategory.value = null
-        sortOption.value = SortOption.Relevance
+        sortOption.value = SortOption.NameAsc
     }
 
     companion object {

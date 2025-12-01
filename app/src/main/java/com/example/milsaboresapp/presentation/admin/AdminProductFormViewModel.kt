@@ -35,7 +35,9 @@ class AdminProductFormViewModel(
         val category: String = "",
         val errors: FormErrors = FormErrors(),
         val isSubmitting: Boolean = false,
-        val submitSuccess: Boolean = false
+        val submitSuccess: Boolean = false,
+        val isEditing: Boolean = false,
+        val editingCode: String? = null
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -90,6 +92,41 @@ class AdminProductFormViewModel(
         }
     }
 
+    fun startCreate() {
+        _uiState.update { current ->
+            val defaultCategory = current.content?.categories?.firstOrNull().orEmpty()
+            current.copy(
+                code = "",
+                name = "",
+                price = "",
+                stock = "",
+                category = defaultCategory,
+                errors = FormErrors(),
+                isSubmitting = false,
+                submitSuccess = false,
+                isEditing = false,
+                editingCode = null
+            )
+        }
+    }
+
+    fun startEditing(item: AdminProductItem) {
+        _uiState.update { current ->
+            current.copy(
+                isEditing = true,
+                editingCode = item.code,
+                code = item.code,
+                name = item.name,
+                price = item.price.toString(),
+                stock = item.stock.toString(),
+                category = item.category,
+                errors = FormErrors(),
+                submitSuccess = false,
+                isSubmitting = false
+            )
+        }
+    }
+
     fun submit() {
         val state = _uiState.value
         val content = state.content ?: return
@@ -128,24 +165,32 @@ class AdminProductFormViewModel(
             it.copy(isSubmitting = true)
         }
 
+        val targetCode = state.editingCode ?: state.code.trim()
+
         viewModelScope.launch {
             val item = AdminProductItem(
-                code = state.code.trim(),
+                code = targetCode,
                 name = state.name.trim(),
                 price = priceValue!!,
                 stock = stockValue!!,
                 category = state.category
             )
-            productRepository.addProduct(item)
+            if (state.isEditing) {
+                productRepository.updateProduct(item)
+            } else {
+                productRepository.addProduct(item)
+            }
             _uiState.update {
                 it.copy(
-                    code = "",
-                    name = "",
-                    price = "",
-                    stock = "",
+                    code = if (state.isEditing) targetCode else "",
+                    name = if (state.isEditing) state.name.trim() else "",
+                    price = if (state.isEditing) priceValue.toString() else "",
+                    stock = if (state.isEditing) stockValue.toString() else "",
                     isSubmitting = false,
                     submitSuccess = true,
-                    errors = FormErrors()
+                    errors = FormErrors(),
+                    isEditing = state.isEditing,
+                    editingCode = if (state.isEditing) targetCode else null
                 )
             }
         }
@@ -154,6 +199,24 @@ class AdminProductFormViewModel(
     fun resetSuccess() {
         _uiState.update {
             it.copy(submitSuccess = false)
+        }
+    }
+
+    fun resetForm() {
+        val content = _uiState.value.content
+        _uiState.update {
+            it.copy(
+                code = "",
+                name = "",
+                price = "",
+                stock = "",
+                category = content?.categories?.firstOrNull().orEmpty(),
+                errors = FormErrors(),
+                isSubmitting = false,
+                submitSuccess = false,
+                isEditing = false,
+                editingCode = null
+            )
         }
     }
 
